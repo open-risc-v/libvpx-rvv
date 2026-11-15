@@ -2,6 +2,7 @@
 // 哈希码流字节与解码 I420 平面，两侧必须逐字节一致。
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vpx/vp8cx.h>
@@ -79,7 +80,9 @@ int main(int argc, char **argv)
     uint64_t hbits = 1469598103934665603ULL;
     uint64_t hpix = 1469598103934665603ULL;
     unsigned long bytes = 0, frames_out = 0;
+    struct timespec t0, t1;
 
+    clock_gettime(CLOCK_MONOTONIC, &t0);
     for (int f = 0; f < NFRAMES; f++) {
         fill_i420(y, u, v, f);
         vpx_image_t img;
@@ -120,6 +123,12 @@ int main(int argc, char **argv)
         vpx_img_free(&img);
     }
     /* 冲刷编码器 */
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    /* 计时走 stderr：stdout 的哈希行要保持两册可比，不能被时间数字污染 */
+    fprintf(stderr, "enc_ms=%.2f\n",
+            ((double)t1.tv_sec - (double)t0.tv_sec) * 1000.0 +
+            ((double)t1.tv_nsec - (double)t0.tv_nsec) / 1e6);
+
     if (vpx_codec_encode(&enc, NULL, NFRAMES, 1, 0, VPX_DL_BEST_QUALITY) == VPX_CODEC_OK) {
         const vpx_codec_cx_pkt_t *pkt; vpx_codec_iter_t it = NULL;
         while ((pkt = vpx_codec_get_cx_data(&enc, &it)) != NULL) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# G3 编码器级 A/B：把 SAD 内核通过编译期开关 CONFIG_RVV_SAD 接到真实编码路径，
+# G3 编码器级 A/B：把 SAD / SSE 内核通过编译期开关 CONFIG_RVV_SAD / CONFIG_RVV_SSE 接到真实编码路径，
 # 两个配置只差这一个宏，其余（-march、优化级别、构建参数）完全一致。
 #
 #   ./scripts/g3-wire-ab.sh            # 编 on/off 两套并在 qemu 下比对哈希
@@ -15,7 +15,7 @@ OUT=build/k-rvv
 
 for side in off on; do
   if [ "$side" = on ]; then
-    SADFLAG="-DCONFIG_RVV_SAD=1"
+    SADFLAG="-DCONFIG_RVV_SAD=1 -DCONFIG_RVV_SSE=1"
   else
     SADFLAG=""
   fi

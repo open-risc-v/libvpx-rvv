@@ -21,10 +21,22 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
+#if CONFIG_RVV_SSE
+/* G3：编译期接线，与 SAD 同一套纪律（A/B 的唯一变量就是这个宏）。
+   只能在 vpx_sse_c 里分流：rtcd 在 riscv 上没有 SIMD 特化，vpx_sse 就是落到 vpx_sse_c。 */
+#include "riscv/sse_rvv.h"
+#include "riscv/sse_rvv.c"
+#endif
+
 int64_t vpx_sse_c(const uint8_t *a, int a_stride, const uint8_t *b,
                   int b_stride, int width, int height) {
   int y, x;
   int64_t sse = 0;
+
+#if CONFIG_RVV_SSE
+  if (vpx_sse_rvv_applicable(width, height))
+    return vpx_sse_rvv(a, a_stride, b, b_stride, width, height);
+#endif
 
   for (y = 0; y < height; y++) {
     for (x = 0; x < width; x++) {
