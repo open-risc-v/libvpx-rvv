@@ -16,6 +16,14 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
+#if CONFIG_RVV_SAD
+/* G3：编译期接线（不是 rtcd 运行时分发）。
+   打开 CONFIG_RVV_SAD 时，8/16/32/64 的方形 SAD 走 RVV 内核，其余尺寸与 avg/4d 仍走 C。
+   之所以用编译期开关：A/B 的唯一变量就是它，产物里不会出现"两个实现都编进去"的情况。 */
+#include "./riscv/sad_rvv.h"
+#include "./riscv/sad_rvv.c"
+#endif
+
 /* Sum the difference between every corresponding element of the buffers. */
 static INLINE unsigned int sad(const uint8_t *src_ptr, int src_stride,
                                const uint8_t *ref_ptr, int ref_stride,
@@ -32,12 +40,36 @@ static INLINE unsigned int sad(const uint8_t *src_ptr, int src_stride,
   return sad;
 }
 
+#if CONFIG_RVV_SAD
+/* 方形块按尺寸分派到 RVV 内核；非方形/其它尺寸回落到 C 版。 */
+static INLINE unsigned int sad_dispatch(const uint8_t *src_ptr, int src_stride,
+                                        const uint8_t *ref_ptr, int ref_stride,
+                                        int width, int height) {
+  if (width == height) {
+    switch (width) {
+      case 8: return vpx_sad8x8_rvv(src_ptr, src_stride, ref_ptr, ref_stride);
+      case 16: return vpx_sad16x16_rvv(src_ptr, src_stride, ref_ptr, ref_stride);
+      case 32: return vpx_sad32x32_rvv(src_ptr, src_stride, ref_ptr, ref_stride);
+      case 64: return vpx_sad64x64_rvv(src_ptr, src_stride, ref_ptr, ref_stride);
+      default: break;
+    }
+  }
+  return sad(src_ptr, src_stride, ref_ptr, ref_stride, width, height);
+}
+#endif
+
+#if CONFIG_RVV_SAD
+#define SAD_DISPATCH sad_dispatch
+#else
+#define SAD_DISPATCH sad
+#endif
+
 #if CONFIG_ENCODERS
 
 #define sadMxN(m, n)                                                          \
   unsigned int vpx_sad##m##x##n##_c(const uint8_t *src_ptr, int src_stride,   \
                                     const uint8_t *ref_ptr, int ref_stride) { \
-    return sad(src_ptr, src_stride, ref_ptr, ref_stride, m, n);               \
+    return SAD_DISPATCH(src_ptr, src_stride, ref_ptr, ref_stride, m, n);        \
   }                                                                           \
   unsigned int vpx_sad##m##x##n##_avg_c(                                      \
       const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr,         \
@@ -76,7 +108,7 @@ static INLINE unsigned int sad(const uint8_t *src_ptr, int src_stride,
 #define sadMxN(m, n)                                                          \
   unsigned int vpx_sad##m##x##n##_c(const uint8_t *src_ptr, int src_stride,   \
                                     const uint8_t *ref_ptr, int ref_stride) { \
-    return sad(src_ptr, src_stride, ref_ptr, ref_stride, m, n);               \
+    return SAD_DISPATCH(src_ptr, src_stride, ref_ptr, ref_stride, m, n);        \
   }
 
 #define sadMxNx4D(m, n)
