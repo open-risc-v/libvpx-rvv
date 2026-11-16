@@ -15,7 +15,7 @@ OUT=build/k-rvv
 
 for side in off on; do
   if [ "$side" = on ]; then
-    SADFLAG="-DCONFIG_RVV_SAD=1 -DCONFIG_RVV_SSE=1"
+    SADFLAG="-DCONFIG_RVV_SAD=1 -DCONFIG_RVV_SSE=1 -DCONFIG_RVV_VAR=1"
   else
     SADFLAG=""
   fi
