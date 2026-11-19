@@ -5,7 +5,10 @@
 set -euo pipefail
 SRC=$1
 OUT=$2
+MARCH=${3:-rv64gcv}
+KERN=${4:-0}
 EXTRA=${EXTRA_CFLAGS:-}
+if [ "$KERN" = "1" ]; then EXTRA="$EXTRA -march=${MARCH} -DCONFIG_RVV_SAD=1 -DCONFIG_RVV_SSE=1"; fi
 mkdir -p "$OUT"
 rm -rf "$OUT/src" && cp -R "$SRC" "$OUT/src"
 cd "$OUT/src"
