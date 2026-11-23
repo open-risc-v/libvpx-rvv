@@ -4,7 +4,7 @@
 - 上游：`webmproject/libvpx` @ `6f4dbb1bc6803cbcdb7f54bd1c11a6228b717705`
 - 编译：`--target=generic-gnu`，静态，两侧同 `-march=rv64gcv -O2`；唯一变量是
   `-DCONFIG_RVV_SAD=1 -DCONFIG_RVV_SSE=1`
-- 真机：SpacemiT K3 / Bianbu `Linux k3 6.18.3 riscv64`
+- 真机：SpacemiT K3 / <distro> `Linux k3 6.18.3 riscv64`
 
 ## 1. 为什么接 SSE 而不是继续抠 SAD
 

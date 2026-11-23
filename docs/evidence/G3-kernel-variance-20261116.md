@@ -1,6 +1,6 @@
 # G3 内核：libvpx variance（三种块尺寸内核 + 整链）
 
-日期 2026-11-16 · 板子 SpacemiT K3（`10.91.8.28`，Bianbu，`gcc 15.2.0`，`vlenb=32`）
+日期 2026-11-16 · 板子 SpacemiT K3（`<board>`，<distro>，`gcc 15.2.0`，`vlenb=32`）
 门禁：功能逐字节 + 真机 A/B（三颗宏只差 `CONFIG_RVV_{SAD,SSE,VAR}`）
 
 ## 1. 结论
